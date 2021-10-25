@@ -1,10 +1,10 @@
 name: Check
-on: [pull_request]
+on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-20.04
     container:
-      image: openjdk:16-jdk-buster
+      image: adoptopenjdk:16-jdk
       options: --user root
     steps:
       - uses: actions/checkout@v2
