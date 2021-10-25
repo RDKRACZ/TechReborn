@@ -1,7 +1,7 @@
 /*
- * This file is part of RebornCore, licensed under the MIT License (MIT).
+ * This file is part of TechReborn, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021 TeamReborn
+ * Copyright (c) 2020 TechReborn
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,27 +22,21 @@
  * SOFTWARE.
  */
 
-package reborncore.client.gui.slots;
+package techreborn.test
 
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import team.reborn.energy.Energy;
+import net.fabricmc.fabric.api.gametest.v1.FabricGameTest
+import net.minecraft.test.TestContext
+
+import java.lang.reflect.Method
 
 /**
- * Created by Rushmead
+ * Base class that all TR game tests should extend from.
+ *
+ * All test methods should accept 1 argument of TRTestContext
  */
-public class SlotCharge extends BaseSlot {
-	public SlotCharge(Inventory inventoryIn, int index, int xPosition, int yPosition) {
-		super(inventoryIn, index, xPosition, yPosition);
-	}
-
-	@Override
-	public boolean canInsert(ItemStack stack) {
-		return Energy.valid(stack);
-	}
-
-	@Override
-	public boolean canWorldBlockRemove() {
-		return false;
-	}
+abstract class TRGameTest implements FabricGameTest {
+    @Override
+    void invokeTestMethod(TestContext context, Method method) {
+        method.invoke(this, new TRTestContext(context))
+    }
 }

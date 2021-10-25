@@ -24,6 +24,7 @@
 
 package techreborn.blockentity.generator;
 
+import java.util.List;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
@@ -34,7 +35,9 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import reborncore.api.IToolDrop;
 import reborncore.client.screen.BuiltScreenHandlerProvider;
 import reborncore.client.screen.builder.BuiltScreenHandler;
@@ -43,28 +46,19 @@ import reborncore.common.blockentity.MachineBaseBlockEntity;
 import reborncore.common.blocks.BlockMachineBase;
 import reborncore.common.powerSystem.PowerAcceptorBlockEntity;
 import reborncore.common.powerSystem.PowerSystem;
+import reborncore.common.powerSystem.RcEnergyTier;
 import reborncore.common.util.StringUtils;
-import team.reborn.energy.EnergySide;
-import team.reborn.energy.EnergyTier;
 import techreborn.blocks.generator.BlockSolarPanel;
 import techreborn.init.TRBlockEntities;
 import techreborn.init.TRContent;
 import techreborn.init.TRContent.SolarPanels;
 
-import java.util.List;
-
 public class SolarPanelBlockEntity extends PowerAcceptorBlockEntity implements IToolDrop, BuiltScreenHandlerProvider {
 
+	private boolean generating = false;
 
-	//	State ZEROGEN: No exposure to sun
-	//	State NIGHTGEN: Has direct exposure to sun
-	//	State DAYGEN: Has exposure to sun and weather is sunny and not raining/thundering
-	public static final int ZEROGEN = 0;
-	public static final int NIGHTGEN = 1;
-	public static final int DAYGEN = 2;
-
-	private int state = ZEROGEN;
-	private int prevState = ZEROGEN;
+	// Range of panel between day/night production; we calculate this only when panel is updated
+	private int dayNightRange = 0;
 
 	private SolarPanels panel;
 
@@ -81,20 +75,25 @@ public class SolarPanelBlockEntity extends PowerAcceptorBlockEntity implements I
 		if (world == null) {
 			return;
 		}
+
 		Block panelBlock = world.getBlockState(pos).getBlock();
 		if (panelBlock instanceof BlockSolarPanel solarPanelBlock) {
 			panel = solarPanelBlock.panelType;
 		}
+
+		dayNightRange = getPanel().generationRateD - getPanel().generationRateN;
 	}
 
-
-	// Setters and getters for the GUI to sync
-	private void setSunState(int state) {
-		this.state = state;
-	}
-
-	public int getSunState() {
-		return state;
+	// Setters/getters that provide boolean interface to underlying generating int; something about
+	// screen auto-sync REQUIRES an integer value (booleans don't get transmitted?!), so resorted to
+	// this ugly approach
+	public boolean isGenerating() { return generating; }
+	private void setIsGenerating(boolean isGenerating) {
+		if (isGenerating != isGenerating()) {
+			// Update block state if necessary
+			world.setBlockState(pos, world.getBlockState(pos).with(BlockMachineBase.ACTIVE, isGenerating));
+		}
+		this.generating = isGenerating;
 	}
 
 	SolarPanels getPanel() {
@@ -108,35 +107,39 @@ public class SolarPanelBlockEntity extends PowerAcceptorBlockEntity implements I
 		if (world == null) {
 			return;
 		}
-		if (world.isSkyVisible(pos.up())) {
-			this.setSunState(NIGHTGEN);
 
-			if (!world.isRaining() && !world.isThundering() && world.isDay()) {
-				this.setSunState(DAYGEN);
-			}
-		} else {
-			this.setSunState(ZEROGEN);
-		}
-		// Nether and The End
-		if (!world.getDimension().hasSkyLight()) {
-			this.setSunState(NIGHTGEN);
-		}
-
-		if (prevState != this.getSunState()) {
-			boolean isGenerating = getSunState() == DAYGEN;
-
-			world.setBlockState(pos, world.getBlockState(pos).with(BlockMachineBase.ACTIVE, isGenerating));
-
-			prevState = this.getSunState();
-		}
+		// Generation is only possible if sky is visible above us
+		setIsGenerating(world.isSkyVisible(pos.up()));
 	}
 
 	public int getGenerationRate() {
-		return switch (getSunState()) {
-			case DAYGEN -> getPanel().generationRateD;
-			case NIGHTGEN -> getPanel().generationRateN;
-			default -> 0;
-		};
+		if (!isGenerating()) {
+			return 0;
+		}
+
+		float skyAngle = world.getSkyAngle(0);
+
+		// Ok, we are actively generating power, but check for a few conditions that would restrict
+		// the generation to minimal production...
+		if (!world.getDimension().hasSkyLight() || // No light source in dimension (e.g. nether or end)
+			  (skyAngle > 0.25 && skyAngle < 0.75) || // Light source is below horizon
+			  (world.isRaining() || world.isThundering())) { // Weather is present
+			return getPanel().generationRateN;
+		}
+
+		// At this point, we know a light source is present and it's clear weather. We need to determine
+		// the level of generation based on % of time through the day, with peak production at noon and
+		// a smooth transition to night production as sun rises/sets
+		float multiplier = 0.0f;
+		if (skyAngle > 0.75) {
+			// Morning to noon
+			multiplier = (0.25f - (1 - skyAngle)) / 0.25f;
+		} else {
+			// Noon to sunset
+			multiplier = (0.25f - skyAngle) / 0.25f;
+		}
+
+		return (int)Math.ceil(getPanel().generationRateN + (dayNightRange * multiplier));
 	}
 
 
@@ -145,12 +148,7 @@ public class SolarPanelBlockEntity extends PowerAcceptorBlockEntity implements I
 	@Override
 	public void tick(World world, BlockPos pos, BlockState state, MachineBaseBlockEntity blockEntity) {
 		super.tick(world, pos, state, blockEntity);
-
-		if (world == null) {
-			return;
-		}
-
-		if (world.isClient) {
+		if (world == null || world.isClient) {
 			return;
 		}
 
@@ -171,24 +169,24 @@ public class SolarPanelBlockEntity extends PowerAcceptorBlockEntity implements I
 	}
 
 	@Override
-	public double getBaseMaxPower() {
+	public long getBaseMaxPower() {
 		return getPanel().internalCapacity;
 	}
 
 	@Override
-	protected boolean canAcceptEnergy(EnergySide side) { return false; }
+	protected boolean canAcceptEnergy(@Nullable Direction side) { return false; }
 
 	@Override
-	public double getBaseMaxOutput() {
+	public long getBaseMaxOutput() {
 		if (getPanel() == TRContent.SolarPanels.CREATIVE) {
-			return EnergyTier.INSANE.getMaxOutput();
+			return RcEnergyTier.INSANE.getMaxOutput();
 		}
 		// Solar panel output will only be limited by the cables the users use
-		return EnergyTier.EXTREME.getMaxOutput();
+		return RcEnergyTier.EXTREME.getMaxOutput();
 	}
 
 	@Override
-	public double getBaseMaxInput() {
+	public long getBaseMaxInput() {
 		return 0;
 	}
 
@@ -203,7 +201,7 @@ public class SolarPanelBlockEntity extends PowerAcceptorBlockEntity implements I
 	}
 
 	@Override
-	public EnergyTier getTier() {
+	public RcEnergyTier getTier() {
 		return getPanel().powerTier;
 	}
 
@@ -286,7 +284,7 @@ public class SolarPanelBlockEntity extends PowerAcceptorBlockEntity implements I
 	public BuiltScreenHandler createScreenHandler(int syncID, final PlayerEntity player) {
 		return new ScreenHandlerBuilder("solar_panel").player(player.getInventory()).inventory().hotbar().addInventory()
 				.blockEntity(this).syncEnergyValue()
-				.sync(this::getSunState, this::setSunState)
+				.sync(this::isGenerating, this::setIsGenerating)
 				.addInventory().create(this, syncID);
 	}
 }

@@ -37,34 +37,34 @@ public class TechRebornConfig {
 	public static int solarInternalCapacityMultiplier = 2000;
 
 	@Config(config = "generators", category = "solarPanelBasic", key = "basicDayRate", comment = "Generation rate during day for Basic Solar Panel (Energy per tick)")
-	public static int basicGenerationRateD = 1;
+	public static int basicGenerationRateD = 3;
 
 	@Config(config = "generators", category = "solarPanelBasic", key = "basicNightRate", comment = "Generation rate during night for Basic Solar Panel (Energy per tick)")
 	public static int basicGenerationRateN = 0;
 
 	@Config(config = "generators", category = "solarPanelAdvanced", key = "advancedDayRate", comment = "Generation rate during day for Advanced Solar Panel (Energy per tick)")
-	public static int advancedGenerationRateD = 4;
+	public static int advancedGenerationRateD = 12;
 
 	@Config(config = "generators", category = "solarPanelAdvanced", key = "advancedNightRate", comment = "Generation rate during night for Advanced Solar Panel (Energy per tick)")
 	public static int advancedGenerationRateN = 0;
 
 	@Config(config = "generators", category = "solarPanelIndustrial", key = "industrialDayRate", comment = "Generation rate during day for Industrial Solar Panel (Energy per tick)")
-	public static int industrialGenerationRateD = 8;
+	public static int industrialGenerationRateD = 24;
 
 	@Config(config = "generators", category = "solarPanelIndustrial", key = "industrialNightRate", comment = "Generation rate during night for Industrial Solar Panel (Energy per tick)")
-	public static int industrialGenerationRateN = 1;
+	public static int industrialGenerationRateN = 4;
 
 	@Config(config = "generators", category = "solarPanelUltimate", key = "ultimateDayRate", comment = "Generation rate during day for Ultimate Solar Panel (Energy per tick)")
-	public static int ultimateGenerationRateD = 16;
+	public static int ultimateGenerationRateD = 48;
 
 	@Config(config = "generators", category = "solarPanelUltimate", key = "ultimateNightRate", comment = "Generation rate during night for Ultimate Solar Panel (Energy per tick)")
-	public static int ultimateGenerationRateN = 4;
+	public static int ultimateGenerationRateN = 8;
 
 	@Config(config = "generators", category = "solarPanelQuantum", key = "quantumDayRate", comment = "Generation rate during day for Quantum Solar Panel (Energy per tick)")
-	public static int quantumGenerationRateD = 128;
+	public static int quantumGenerationRateD = 512;
 
 	@Config(config = "generators", category = "solarPanelQuantum", key = "quantumNightRate", comment = "Generation rate during night for Quantum Solar Panel (Energy per tick)")
-	public static int quantumGenerationRateN = 16;
+	public static int quantumGenerationRateN = 32;
 
 	@Config(config = "generators", category = "lightning_rod", key = "LightningRodMaxOutput", comment = "Lightning Rod Max Output (Energy per tick)")
 	public static int lightningRodMaxOutput = 2048;
@@ -91,7 +91,7 @@ public class TechRebornConfig {
 	public static int plasmaGeneratorMaxOutput = 2048;
 
 	@Config(config = "generators", category = "plasma_generator", key = "PlasmaGeneratorMaxEnergy", comment = "Plasma Generator Max Energy")
-	public static double plasmaGeneratorMaxEnergy = 500_000_000;
+	public static long plasmaGeneratorMaxEnergy = 500_000_000;
 
 	@Config(config = "generators", category = "plasma_generator", key = "PlasmaGeneratorEnergyPerTick", comment = "Plasma Generator Energy Per Tick")
 	public static int plasmaGeneratorEnergyPerTick = 400;
@@ -242,10 +242,10 @@ public class TechRebornConfig {
 	public static int omniToolHitCost = 125;
 
 	@Config(config = "items", category = "power", key = "rockCutterCharge", comment = "Energy Capacity for Rock Cutter")
-	public static int rockCutterCharge = 400_000;
+	public static int rockCutterCharge = 10_000;
 
 	@Config(config = "items", category = "power", key = "rockCutterCost", comment = "Energy Cost for Rock Cutter")
-	public static int rockCutterCost = 500;
+	public static int rockCutterCost = 10;
 
 	@Config(config = "items", category = "power", key = "lapotronPackCharge", comment = "Energy Capacity for Lapotron Pack")
 	public static int lapotronPackCharge = 100_000_000;
@@ -275,22 +275,22 @@ public class TechRebornConfig {
 	public static int cloackingDeviceCost = 10;
 
 	@Config(config = "items", category = "power", key = "quantumSuitCapacity", comment = "Quantum Suit Energy Capacity")
-	public static double quantumSuitCapacity = 40_000_000;
+	public static long quantumSuitCapacity = 40_000_000;
 
 	@Config(config = "items", category = "power", key = "quantumSuitFlyingCost", comment = "Quantum Suit Flying Cost")
-	public static double quantumSuitFlyingCost = 50;
+	public static long quantumSuitFlyingCost = 50;
 
 	@Config(config = "items", category = "power", key = "quantumSuitSwimmingCost", comment = "Quantum Suit Swimming Cost")
-	public static double quantumSuitSwimmingCost = 20;
+	public static long quantumSuitSwimmingCost = 20;
 
 	@Config(config = "items", category = "power", key = "quantumSuitBreathingCost", comment = "Quantum Suit Breathing Cost")
-	public static double quantumSuitBreathingCost = 20;
+	public static long quantumSuitBreathingCost = 20;
 
 	@Config(config = "items", category = "power", key = "quantumSuitSprintingCost", comment = "Quantum Suit Sprinting Cost")
-	public static double quantumSuitSprintingCost = 20;
+	public static long quantumSuitSprintingCost = 20;
 
 	@Config(config = "items", category = "power", key = "quantumSuitFireExtinguishCost", comment = "Quantum Suit Cost for Fire Extinguish")
-	public static double fireExtinguishCost = 50;
+	public static long fireExtinguishCost = 50;
 
 	@Config(config = "items", category = "power", key = "quantumSuitEnableSprint", comment = "Enable Sprint Speed increase for Quantum Legs")
 	public static boolean quantumSuitEnableSprint = true;

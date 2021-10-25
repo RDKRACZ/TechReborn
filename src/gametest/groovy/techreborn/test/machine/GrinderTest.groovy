@@ -1,7 +1,7 @@
 /*
- * This file is part of RebornCore, licensed under the MIT License (MIT).
+ * This file is part of TechReborn, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021 TeamReborn
+ * Copyright (c) 2020 TechReborn
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,16 +22,27 @@
  * SOFTWARE.
  */
 
-package reborncore.mixin.common;
+//file:noinspection GrMethodMayBeStatic
+package techreborn.test.machine
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.Ingredient;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import net.minecraft.item.Items
+import net.minecraft.test.GameTest
+import techreborn.init.TRContent
+import techreborn.test.TRGameTest
+import techreborn.test.TRTestContext
 
-@Mixin(Ingredient.class)
-public interface AccessorIngredient {
+class GrinderTest extends TRGameTest {
+    @GameTest(structureName = EMPTY_STRUCTURE, tickLimit = 150)
+    def testGrind2OCs(TRTestContext context) {
+        /**
+         * Test that grinder with 2 overclocker upgrades grinds coal into coal dust in 116 ticks
+         */
+        context.poweredMachine(TRContent.Machine.GRINDER) {
+            input(Items.COAL)
 
-	@Accessor
-	ItemStack[] getMatchingStacks();
+            withUpgrades(TRContent.Upgrades.OVERCLOCKER, 2)
+
+            expectOutput(TRContent.Dusts.COAL, 116)
+        }
+    }
 }

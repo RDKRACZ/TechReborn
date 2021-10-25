@@ -29,6 +29,7 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +42,6 @@ import reborncore.common.fluid.container.ItemFluidInfo;
 import reborncore.common.powerSystem.PowerAcceptorBlockEntity;
 import reborncore.common.util.RebornInventory;
 import reborncore.common.util.Tank;
-import team.reborn.energy.EnergySide;
 import techreborn.api.generator.EFluidGenerator;
 import techreborn.api.generator.FluidGeneratorRecipe;
 import techreborn.api.generator.FluidGeneratorRecipeList;
@@ -59,8 +59,8 @@ public abstract class BaseFluidGeneratorBlockEntity extends PowerAcceptorBlockEn
 	protected long lastOutput = 0;
 
 	/*
-	 * We use this to keep track of fractional millibuckets, allowing us to hit
-	 * our eu/bucket targets while still only ever removing integer millibucket
+	 * We use this to keep track of fractional fluid units, allowing us to hit
+	 * our eu/bucket targets while still only ever removing integer fluid unit
 	 * amounts.
 	 */
 	double pendingWithdraw = 0.0;
@@ -79,16 +79,11 @@ public abstract class BaseFluidGeneratorBlockEntity extends PowerAcceptorBlockEn
 	@Override
 	public void tick(World world, BlockPos pos, BlockState state, MachineBaseBlockEntity blockEntity) {
 		super.tick(world, pos, state, blockEntity);
-
-		if (world == null) {
+		if (world == null || world.isClient) {
 			return;
 		}
 
 		ticksSinceLastChange++;
-
-		if (world.isClient) {
-			return;
-		}
 
 		// Check cells input slot 2 time per second
 		if (ticksSinceLastChange >= 10) {
@@ -110,10 +105,12 @@ public abstract class BaseFluidGeneratorBlockEntity extends PowerAcceptorBlockEn
 
 			if (currentRecipe != null) {
 				final int euPerBucket = currentRecipe.getEnergyPerBucket();
-				final float millibucketsPerTick = euTick * 1000 / (float) euPerBucket;
+
+				// Make sure to calculate the fluid used per tick based on the underlying fluid unit (droplets)
+				final float fluidPerTick = (euTick / (euPerBucket / (float)FluidValue.BUCKET.getRawValue()));
 
 				if (tryAddingEnergy(euTick)) {
-					pendingWithdraw += millibucketsPerTick;
+					pendingWithdraw += fluidPerTick;
 					final int currentWithdraw = (int) pendingWithdraw;
 					pendingWithdraw -= currentWithdraw;
 					tank.getFluidInstance().subtractAmount(FluidValue.fromRaw(currentWithdraw));
@@ -150,17 +147,17 @@ public abstract class BaseFluidGeneratorBlockEntity extends PowerAcceptorBlockEn
 	}
 
 	@Override
-	public double getBaseMaxOutput() {
+	public long getBaseMaxOutput() {
 		return euTick;
 	}
 
 	@Override
-	public double getBaseMaxInput() {
+	public long getBaseMaxInput() {
 		return 0;
 	}
 
 	@Override
-	public boolean canAcceptEnergy(EnergySide side) {
+	public boolean canAcceptEnergy(@Nullable Direction side) {
 		return false;
 	}
 
